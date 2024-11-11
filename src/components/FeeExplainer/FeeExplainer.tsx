@@ -26,7 +26,10 @@ import { calculateFees } from 'lib/fees/model'
 import { FEE_CURVE_PARAMETERS, FEE_MODEL_TO_FEATURE_NAME } from 'lib/fees/parameters'
 import type { ParameterModel } from 'lib/fees/parameters/types'
 import { isSome } from 'lib/utils'
-import { selectVotingPower } from 'state/apis/snapshot/selectors'
+import {
+  selectIsSnapshotApiQueriesRejected,
+  selectVotingPower,
+} from 'state/apis/snapshot/selectors'
 import { useAppSelector } from 'state/store'
 
 import { CHART_TRADE_SIZE_MAX_USD } from './common'
@@ -135,6 +138,8 @@ const FeeChart: React.FC<FeeChartProps> = ({ foxHolding, tradeSize, feeModel }) 
     return handleDebounce.cancel
   }, [foxHolding])
 
+  const isSnapshotApiQueriesRejected = useAppSelector(selectIsSnapshotApiQueriesRejected)
+
   const data = useMemo(() => {
     return tradeSizeData
       .map(trade => {
@@ -142,21 +147,23 @@ const FeeChart: React.FC<FeeChartProps> = ({ foxHolding, tradeSize, feeModel }) 
           tradeAmountUsd: bn(trade),
           foxHeld: bn(debouncedFoxHolding),
           feeModel,
+          isSnapshotApiQueriesRejected,
         }).feeBpsFloat.toNumber()
         return { x: trade, y: feeBps }
       })
       .filter(isSome)
-  }, [debouncedFoxHolding, feeModel])
+  }, [debouncedFoxHolding, feeModel, isSnapshotApiQueriesRejected])
 
   const currentPoint = useMemo(() => {
     const feeBps = calculateFees({
       tradeAmountUsd: bn(tradeSize),
       foxHeld: bn(debouncedFoxHolding),
       feeModel,
+      isSnapshotApiQueriesRejected,
     }).feeBpsFloat.toNumber()
 
     return [{ x: tradeSize, y: feeBps }]
-  }, [tradeSize, debouncedFoxHolding, feeModel])
+  }, [tradeSize, debouncedFoxHolding, feeModel, isSnapshotApiQueriesRejected])
 
   const tickLabelProps = useCallback(
     () => ({ fill: textColor, fontSize: 12, fontWeight: 'medium' }),
@@ -263,11 +270,13 @@ type FeeOutputProps = {
 }
 
 export const FeeOutput: React.FC<FeeOutputProps> = ({ tradeSizeUSD, foxHolding, feeModel }) => {
+  const isSnapshotApiQueriesRejected = useAppSelector(selectIsSnapshotApiQueriesRejected)
   const { feeUsd, feeBps, foxDiscountPercent, feeUsdBeforeDiscount, feeBpsBeforeDiscount } =
     calculateFees({
       tradeAmountUsd: bn(tradeSizeUSD),
       foxHeld: bn(foxHolding),
       feeModel,
+      isSnapshotApiQueriesRejected,
     })
 
   const basedOnFeeTranslation: TextPropTypes['translation'] = useMemo(

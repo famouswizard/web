@@ -247,6 +247,7 @@ export const mockStore: ReduxState = {
     manualReceiveAddressIsEditing: false,
     manualReceiveAddressIsValid: undefined,
     slippagePreferencePercentage: undefined,
+    limitPriceBuyAsset: '0',
   },
   tradeQuoteSlice: {
     activeQuoteMeta: undefined,
